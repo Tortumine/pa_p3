@@ -1,15 +1,14 @@
 # Programmation avancée Projet 3
 
-[PDF](doc/p3.pdf)
-
 ## Mise en page automatique d'une bande dessinée
+
+[PDF](doc/p3.pdf)
 
 ## DEADLINE: Vendredi 22 décembre 2017 à 23h59
 
 ## TODO
 
-* Nothing
-* Yet
+* Faut pas oublier d'ajouer les répertoires généres par la compilation à _gitignore_
 
 ## git cheat sheet
 
@@ -19,7 +18,7 @@
 * Supprimer la dernière sauvegarde: __git stash drop__
 * Ajouter le suivit des autres branches: __git fetch --all__
 * Pull toutes les branches: __git pull --all__
-* Aller sur une branche et la suivre: __git checkout -b LocalName origin/nombranchedistante__
+* Aller sur une branche et la suivre: __git checkout -b nombranchelocale origin/nombranchedistante__
 * Fusionner une brnache avec la branche actuelle: __git merge nombranche__
 
 ## Structure du projet
