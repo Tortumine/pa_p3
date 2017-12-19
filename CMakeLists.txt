@@ -18,4 +18,4 @@ set(SEAMCARVING_SOURCE_FILES
         src/mainSeamCarving.c)
 
 add_executable(mainComic ${COMIC_SOURCE_FILES})
-add_executable(mainSeamCarving ${COMIC_SOURCE_FILES})
+add_executable(mainSeamCarving ${SEAMCARVING_SOURCE_FILES})

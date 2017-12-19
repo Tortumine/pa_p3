@@ -51,14 +51,13 @@ int main(int argc, char* argv[])
 
     /* --- Seam Carving --- */
     PNMImage* output;
-
     if (nbPix < 0)
     {
         output = reduceImageWidth(original, (size_t) -nbPix);
     } else {
         output = increaseImageWidth(original, (size_t) nbPix);
     }
-
+    printf("A la fin ça passe aussi\n");
     /* --- Writing output --- */
     if (!output)
     {
