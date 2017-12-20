@@ -57,7 +57,6 @@ int main(int argc, char* argv[])
     } else {
         output = increaseImageWidth(original, (size_t) nbPix);
     }
-    printf("A la fin ça passe aussi\n");
     /* --- Writing output --- */
     if (!output)
     {
