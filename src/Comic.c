@@ -3,7 +3,8 @@
 //
 
 #include <stddef.h>
-#include <math.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "PNM.h"
 
 /* ------------------------------------------------------------------------- *
@@ -25,7 +26,26 @@
  * ------------------------------------------------------------------------- */
 size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,size_t comicBorder)
 {
+    int i,j,nb_cuts;
 
+    //Memoization table
+    int *memo[nbImages];
+    for (i=0; i<nbImages; i++)
+        memo[i] = (int *)malloc(nbImages * sizeof(int));
+    for (i = 0; i <  nbImages; i++)
+        for (j = 0; j < nbImages; j++)
+            memo[i][j] = -13;
+    //cuts table
+    int *cuts[nbImages];
+    for (i=0; i<nbImages; i++)
+        cuts[i] = (int *)malloc(2 * sizeof(int));
+    nb_cuts=0;
+
+
+    Primary(images,0,nbImages-1,comicWidth,comicBorder,memo,cuts,&nb_cuts);
+
+    printf("%d",nb_cuts);
+    fflush(stdout);
 }
 
 /* ------------------------------------------------------------------------- *
@@ -45,49 +65,94 @@ size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,s
  * ------------------------------------------------------------------------- */
 PNMImage* packComic(const PNMImage** images, size_t nbImages, size_t comicWidth, size_t comicBorder)
 {
-
+    wrapImages(images, nbImages, comicWidth,comicBorder);
 }
 
-/* ------------------------------------------------------------------------- *
- * Compute the optimal positions of the images on the page.
- *
- * Computes the difference between the wanted comicWidth and
- * the with obtained bt cells i to j.
- *
- * PARAMETERS
- * images       An array of images
- * i            First image to consider
- * j            Last image to consider
- * comicWidth   The width of a page
- * comicBorder  The border around images
- *
- * RETURN
- * extras       The difference between desired length and the obtained one
- * NULL         if an error occurred
- * ------------------------------------------------------------------------- */
-int extras(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder)
+
+int extras(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** Memo)
 {
-
+    int tmp;
+    //si la valeur est sauvegardée
+    if(Memo[i][j] != -13) return Memo[i][j];
+    else
+    {
+        //si non sauvegardée mais une seule case
+        if(i==j)
+        {
+            //calcul extra case unique
+            tmp = images[i]->width - comicWidth;
+        }
+        //si non sauvegardée mais plusieurs cases
+        else
+        {
+            //calcul (case actuelle + espace + extra(cases suivante))-largeur souhaitée
+            tmp = images[i]->width + comicBorder + extras(images,i+1,j,comicWidth,comicBorder,Memo);
+        }
+        Memo[i][j]=tmp;
+        return tmp;
+    }
 }
-
-/* ------------------------------------------------------------------------- *
- *
- * Computes the cost of placing the cells i to j on the same row.
- *
- * PARAMETERS
- * images       An array of images
- * i            First image to consider
- * j            Last image to consider
- * comicWidth   The width of a page
- * comicBorder  The border around images
- *
- * RETURN
- * extras       The cost of the line
- * NULL         if an error occurred
- * ------------------------------------------------------------------------- */
-int cost(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder)
+int cost(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** Memo)
 {
-    int tmp = extras(images,i,j,comicWidth,comicBorder);
-    if(tmp==NULL)return NULL;
-    return pow(tmp,3);
+    int tmp = extras(images,i,j,comicWidth,comicBorder,Memo);
+    tmp = tmp*tmp*tmp;
+    tmp = abs(tmp);
+    return tmp;
 }
+int c(const PNMImage** images,int nb_i, size_t comicWidth, size_t comicBorder,int** memo, int** cuts,int* nb_cuts)
+{
+    int k,tmp=0;
+    for(k=0;k<=nb_cuts;k++)
+    {
+        tmp+=cost(images,cuts[k][0],cuts[k][1],comicWidth,comicBorder,memo);
+    }
+    return tmp;
+}
+
+/***
+ * Fonction de découpe primaire, agence les cases de façon gloutonne donnant priorité au premières cases.
+ * On essaye d'approcjher le plus possible la largeur pour la première ligne, puis on coupe et on continue pour la seconde, etc
+ *
+ * @param images
+ * @param i
+ * @param j
+ * @param comicWidth
+ * @param comicBorder
+ * @param memo
+ * @param cuts
+ * @param nb_cuts
+ *
+ * Les données utiles sont dans cuts et nb_cuts
+ */
+void Primary(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** memo, int** cuts,int* nb_cuts)
+{
+    if(i>=j)
+    {
+        cuts[*nb_cuts-1][1]=j;
+        return;
+    }
+    else
+    {
+        int cond = 1;
+        int k = i;
+        while(cond)
+        {
+            int tmpa=cost(images,i,k,comicWidth,comicBorder,memo);
+            int tmpb=cost(images,i,k+1,comicWidth,comicBorder,memo);
+            if(tmpa>tmpb)
+            {
+                k++;
+            }
+            else
+            {
+                cuts[*nb_cuts][0]=i;
+                cuts[*nb_cuts][1]=k;
+                *nb_cuts=*nb_cuts + 1;
+                Primary(images,k+1,j,comicWidth,comicBorder,memo,cuts,nb_cuts);
+                cond =0;
+            }
+        }
+        return;
+    }
+}
+
