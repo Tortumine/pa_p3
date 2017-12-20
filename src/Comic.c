@@ -7,6 +7,10 @@
 #include <stdio.h>
 #include "PNM.h"
 
+int extras(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** Memo);
+int cost(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** Memo);
+void Primary(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** memo, int** cuts,int* nb_cuts);
+
 /* ------------------------------------------------------------------------- *
  * Compute the optimal positions of the images on the page.
  *
@@ -27,6 +31,7 @@
 size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,size_t comicBorder)
 {
     int i,j,nb_cuts;
+    size_t* ret;
 
     //Memoization table
     int *memo[nbImages];
@@ -44,7 +49,24 @@ size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,s
 
     Primary(images,0,nbImages-1,comicWidth,comicBorder,memo,cuts,&nb_cuts);
 
-    printf("%d",nb_cuts);
+    // convertion de la disposition en formar demandé (cf specification)
+    ret=malloc(nbImages* sizeof(size_t));
+    int k =0;
+    for(i=0;i<nb_cuts;i++)
+    {
+        for(j=cuts[i][0];j<=cuts[i][1];j++)
+        {
+            ret[k]=i;
+            k++;
+        }
+    }
+
+    for(i=0;i<nbImages;i++)
+    {
+        printf("\t%d",i+1);
+        if(ret[i]!=ret[i+1])printf("\n");
+    }
+
     fflush(stdout);
 }
 
@@ -99,7 +121,7 @@ int cost(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBo
     tmp = abs(tmp);
     return tmp;
 }
-int c(const PNMImage** images,int nb_i, size_t comicWidth, size_t comicBorder,int** memo, int** cuts,int* nb_cuts)
+int c(const PNMImage** images,int nb_i, size_t comicWidth, size_t comicBorder,int** memo, int** cuts,int nb_cuts)
 {
     int k,tmp=0;
     for(k=0;k<=nb_cuts;k++)

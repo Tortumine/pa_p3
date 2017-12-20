@@ -49,7 +49,6 @@ PNMImage* packComic(const PNMImage** images, size_t nbImages, size_t comicWidth,
                     size_t comicBorder);
 
 
-int extras(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** Memo);
-int cost(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** Memo);
+
 
 #endif // _COMICS_H_
