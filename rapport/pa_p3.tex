@@ -98,10 +98,19 @@
 \subsection{Approche par recherche exhaustive}
 \subsubsection{Comic}
 \subsubsection{Seam carving}
+Pour créer une couture, on part d'un pixel à la première rangée. De là, on a le choix entre trois directions pour continuer la couture à la rangée suivante. Pour avancer d'encore une rangée, on a encore le choix entre trois directions. On a donc (en ne prenant pas en compte les bords gauche et droit) une complexité $m*3^n$ où m est le nombre de pixels de départ à la première rangée et n le nombre de pixels en hauteur.
 
 \subsection{Formulation récursive de la fonction de coût}
 \subsubsection{Comic}
 \subsubsection{Seam carving}
+$$
+C(i,j) = \left\{
+	\begin{array}{ll}
+		E(0,j) & si\ i==0 \\
+		E(i,j)+min(C(i-1,j-1),C(i-1,j),C(i-1,j+1)) & sinon
+	\end{array}
+\right.
+$$
 
 \subsection{Graphe des appels récursifs pour un problème de petite taille}
 \subsubsection{Comic}
