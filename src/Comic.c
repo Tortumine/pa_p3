@@ -102,7 +102,7 @@ int extras(const PNMImage** images,int i, int j, size_t comicWidth, size_t comic
         if(i==j)
         {
             //calcul extra case unique
-            tmp = images[i]->width - comicWidth;
+            tmp = images[i]->width - comicWidth + comicBorder*2;
         }
         //si non sauvegardée mais plusieurs cases
         else
