@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include "PNM.h"
+#include "SeamCarving.h"
 
 /*--------------------------------------------------------------------
 * Computes the energy of a PNM image pixel by using the image gradient
@@ -12,7 +13,7 @@
 *
 * PARAMETERS
 * image     Pointer to a PNM image
-* i         position of the pixel in the array
+* i         position of the pixel in the array containing the image
 * 
 * RETURN
 * energy    the energy of the pixel
@@ -25,23 +26,20 @@ size_t pixelEnergy(const PNMImage* image, size_t i);
 * PARAMETERS
 * image     Pointer to a PNM image
 * energies  Pointer to an array containing minimal enrgy seam for each pixel
-* moves     Pointer to an array containing for every pixel direction to the previous pixel in the seam
+* moves     Pointer to an array containing, for every pixel, the direction to the previous pixel in the seam
 *           Three values possible : -1=left, 0=center, 1=right
-* RETURN
-* energies    the array containing the seams energies
 *----------------------------------------------------------------------*/
 void seams(const PNMImage* image, size_t* energies, int* moves);
 
 /*--------------------------------------------------------------------
-* Select the seam with least energy in the array and saves indexes relevant pixels in selectedSeam
+* Select the seam with least energy in the array and saves the indexes of relevant pixels in selectedSeam
 *
 * PARAMETERS
-* heigth        Heigth of the image
+* heigth       Heigth of the image
 * width        width of the image
-* energies     Pointer to an array containing minimal enrgy seam for each pixel
-* moves     Pointer to an array containing for every pixel direction to the previous pixel in the seam
-* selectedSeam Array containing indexes of pixels involved in the selected seam. For row 0 to row n
-
+* energies     Pointer to an array containing minimal energy seam for each pixel
+* moves        Pointer to an array containing, for every pixel, thr direction to the previous pixel in the seam
+* selectedSeam Array containing indexes of pixels involved in the selected seam. From row 0 to row n
 *----------------------------------------------------------------------*/
 void selectSeam(size_t heigth,size_t width, size_t* energies, int* moves, size_t* selectedSeam);
 
@@ -67,6 +65,8 @@ size_t pixelEnergy(const PNMImage* image, size_t i)
         bottom=i+image->width;
     else
         bottom=i;
+    
+    //Computing and adding the energy for the the three colors
     //red
     energy += (size_t)(abs(image->data[left].red - image->data[right].red)/2 
                 + abs(image->data[up].red - image->data[bottom].red)/2);
@@ -82,7 +82,9 @@ size_t pixelEnergy(const PNMImage* image, size_t i)
 void seams(const PNMImage* image, size_t* energies, int* moves)
 {
     size_t left, center, right;
-    for(size_t i=0; i < image->height;i++)
+    //compute the seam with the least energy for every pixel
+    for(size_t i=0; i<image->height;i++)
+    {
         for(size_t j=0;j<image->width;j++)
         {
             //case when we are in the first row
@@ -93,31 +95,32 @@ void seams(const PNMImage* image, size_t* energies, int* moves)
             }
             else
             {
-                //selection of the seam to follow
+                //selection of the seam to follow by compairing the three potential candidates
+                //If we are out of bounds, the variables are set to a value higher than any possible
+                //seam energy. On base of the height of the image 
                 if(j>0)
                     left = energies[(i-1)*image->width + j-1];
                 else
-                    left= 42949;
+                    left= 429490;
 
                 center = energies[(i-1)*image->width + j];
 
                 if(j<image->width-1)
                     right = energies[(i-1)*image->width + j+1];
                 else
-                    right = 42949;
+                    right = 429490;
 
-                //int tmp = (left < center) ? left : center;
-                int tmp;
+                //More compact with ternary operator?
+                size_t tmp;
                 if(left < center)
                      tmp=left;
                 else
                      tmp=right;
-                int min;
+                size_t min;
                 if(tmp < right)
                      min=tmp;
                 else
                      min=right;
-                //int min = (tmp < right) ? tmp : right;
 
                 //fill arrays "moves" and "energies" on base of selected seam
                 //from (i,j) gives the move to go to (i-1,?)
@@ -131,20 +134,25 @@ void seams(const PNMImage* image, size_t* energies, int* moves)
                 energies[i*image->width + j] = min + pixelEnergy(image,i*image->width + j);
             }
         }
+    }
+        
 }
 
 void selectSeam(size_t heigth, size_t width, size_t* energies, int* moves, size_t* selectedSeam)
 {
-    size_t start=0;//offset of starting pixel, at the bottom row of the image
+    size_t start=0;//offset of the pixel in the seam, for the current image row
     size_t k=heigth-1;//index in the slectedSeam array
-    for(int j=0;j < width;j++)
+    //select the seam on base of the last row of the image
+    for(size_t j=0;j < width;j++)
     {
         if(energies[(heigth-1)*width + j] < energies[(heigth-1)*width + start])
             start=j;
     }
     selectedSeam[k]=start;
     k--;
-    for(int i=heigth-2;i>=0; i--)
+    //for every row, starting from the bottom, add in selectedSeam the offset of the pixel
+    //in the selected seam
+    for(int i=(int)(heigth-2);i>=0; i--)
     {
         if(moves[(i+1)*width + start] == -1)
             start --;
@@ -154,35 +162,40 @@ void selectSeam(size_t heigth, size_t width, size_t* energies, int* moves, size_
         k--;
     }
 }
+
 PNMImage* reduceImageWidth(const PNMImage* image, size_t k)
 {
     size_t* energies;
     int* moves;
     size_t* selectedSeam;
     PNMImage* tmp;
-    energies = malloc(image->height*image->width*sizeof(size_t));
-    if (energies==NULL)
-        printf("Erreur d'allocation pour energies\n");
-
-    moves = malloc(image->height*image->width*sizeof(int));
-    if (moves==NULL)
-        printf("Erreur d'allocation pour moves\n");
-
+    //array containing the position of the pixels visited by the selected seam for every row of the image
     selectedSeam = malloc(image->height*sizeof(size_t));
     if (selectedSeam==NULL)
         printf("Erreur d'allocation pour selectedSeam\n");
-
+    //Current image
     PNMImage* new = createPNM(image->width, image->height);
-
     for(size_t i=0; i < image->height;i++)
         for(size_t j=0;j<image->width;j++)
             new->data[i*image->width+j] = image->data[i*image->width+j];
+    //loop corresponding to the number of pixels in width to reduce
     for(size_t l=0; l<k; l++)
     {
+        //array containing the vertical energy seam for every pixel
+        energies = malloc(image->height*image->width*sizeof(size_t));
+        if (energies==NULL)
+            printf("Erreur d'allocation pour energies\n");
+        //array containing the moves to follow any seam 
+        moves = malloc(image->height*image->width*sizeof(int));
+        if (moves==NULL)
+            printf("Erreur d'allocation pour moves\n");
+
         seams(new, energies, moves);
         selectSeam(new->height, new->width, energies, moves, selectedSeam);
+        //temporary image of width new->width-1
         tmp = createPNM(new->width-1, new->height);
         size_t jP;
+        //create the new image of width -1.
         for(size_t i=0; i<new->height;i++)
         {
             jP=0;
@@ -195,15 +208,13 @@ PNMImage* reduceImageWidth(const PNMImage* image, size_t k)
             }
         }  
         freePNM(new);
-        new = tmp;
-    }
-    free(energies);
-    free(moves);
+        free(energies);
+        free(moves);
+        new = tmp;//the tmp image becomes the new current image
+    }  
     free(selectedSeam);
-
     return new;
 }
-
 
 PNMImage* increaseImageWidth(const PNMImage* image, size_t k)
 {
@@ -211,26 +222,57 @@ PNMImage* increaseImageWidth(const PNMImage* image, size_t k)
     int* moves;
     size_t* selectedSeam;
     PNMImage* tmp;
-    energies = malloc(image->height*image->width*sizeof(size_t));
-    if (energies==NULL)
-        printf("Erreur d'allocation pour energies\n");
-
-    moves = malloc(image->height*image->width*sizeof(int));
-    if (moves==NULL)
-        printf("Erreur d'allocation pour moves\n");
-
+    //array containing the position of the pixels visited by the selected seam for every row of the image
     selectedSeam = malloc(image->height*sizeof(size_t));
     if (selectedSeam==NULL)
         printf("Erreur d'allocation pour selectedSeam\n");
-
+    //Current image
     PNMImage* new = createPNM(image->width, image->height);
-
-    for(int i=0; i<k; i++)
+    for(size_t i=0; i < image->height;i++)
+        for(size_t j=0;j<image->width;j++)
+            new->data[i*image->width+j] = image->data[i*image->width+j];
+    //loop corresponding to the number of pixels in width to increase
+    for(size_t l=0; l<k; l++)
     {
+
+        //array containing the vertical energy seam for every pixel
+        energies = malloc(new->height*new->width*sizeof(size_t));
+        if (energies==NULL)
+            printf("Erreur d'allocation pour energies\n");
+        //array containing the moves to follow any seam
+        moves = malloc(new->height*new->width*sizeof(int));
+        if (moves==NULL)
+            printf("Erreur d'allocation pour moves\n");
+
         seams(new, energies, moves);
-        selectSeam(new->height, new->width, energies, moves, selectedSeam);
-        
-        tmp = createPNM(new->width, new->height);
+        selectSeam(new->height, new->width, energies, moves, selectedSeam);      
+        //temporary image of width new->width+1
+        tmp = createPNM(new->width+1, new->height);
+        size_t jP;
+        //create the new image of width +1
+        for(size_t i=0; i<new->height;i++)
+        {
+            jP=0;
+            for(size_t j=0; j<new->width;j++)
+            {
+                if(j == selectedSeam[i])
+                {
+                    tmp->data[i*tmp->width + jP] = new->data[i*new->width + j];
+                    jP++;
+                }
+                if(jP < tmp->width) 
+                    tmp->data[i*tmp->width + jP] = new->data[i*new->width + j];
+                jP++;   
+            }
+        } 
+        freePNM(new);
+        new = tmp;//the tmp image becomes the new current image
+        free(energies);
+        free(moves);
     }
+    
+    free(selectedSeam);
+
+
     return new;
 }
