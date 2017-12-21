@@ -10,8 +10,8 @@
 #include "PNM.h"
 
 int extras(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo);
-size_t cost(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo);
-size_t c(const PNMImage **images, size_t comicWidth, size_t comicBorder, int **memo, size_t **cuts, size_t nb_cuts);
+unsigned long long cost(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo);
+unsigned long long c(const PNMImage **images, size_t comicWidth, size_t comicBorder, int **memo, size_t **cuts, size_t nb_cuts);
 void Primary(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** memo, size_t ** cuts,size_t * nb_cuts);
 void setBackgroudColor(PNMImage *image,int R,int G,int B);
 
@@ -220,12 +220,11 @@ int extras(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t
         return (int) tmp;
     }
 }
-size_t cost(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo)
+unsigned long long cost(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo)
 {
-    long int tmp = extras(images,i,j,comicWidth,comicBorder,Memo);
+    unsigned long long tmp = abs(extras(images,i,j,comicWidth,comicBorder,Memo));
     tmp = tmp*tmp*tmp;
-    tmp = abs((int) tmp);
-    return (size_t)tmp;
+    return tmp;
 }
 /***
  * Fonction qui calcule le cout de toute une ligne, à utiliser dans wrapImages()
@@ -238,9 +237,10 @@ size_t cost(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_
  * @param nb_cuts
  * @return line_cost
  */
-size_t c(const PNMImage **images, size_t comicWidth, size_t comicBorder, int **memo, size_t **cuts, size_t nb_cuts)
+unsigned long long c(const PNMImage **images, size_t comicWidth, size_t comicBorder, int **memo, size_t **cuts, size_t nb_cuts)
 {
-    size_t k,line_cost=0;
+    size_t k;
+    unsigned long long line_cost=0;
     for(k=0;k<=nb_cuts;k++)
     {
         line_cost+=cost(images,cuts[k][0],cuts[k][1],comicWidth,comicBorder,memo);
