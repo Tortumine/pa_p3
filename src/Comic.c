@@ -265,6 +265,7 @@ unsigned long long c(const PNMImage **images, size_t comicWidth, size_t comicBor
  */
 void Primary(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** memo, size_t ** cuts,size_t * nb_cuts)
 {
+    unsigned long long tmpa,tmpb;
     if(i>=j)
     {
         cuts[*nb_cuts-1][1]=(size_t) j;
@@ -277,8 +278,8 @@ void Primary(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size
         while(cond)
         {
             //comparaison des couts
-            size_t tmpa=cost(images,i,k,comicWidth,comicBorder,memo);
-            size_t tmpb=cost(images,i,k+1,comicWidth,comicBorder,memo);
+            tmpa=cost(images,i,k,comicWidth,comicBorder,memo);
+            tmpb=cost(images,i,k+1,comicWidth,comicBorder,memo);
             if(tmpa>tmpb)//si on peut encore ajouter une case
             {
                 k++;
