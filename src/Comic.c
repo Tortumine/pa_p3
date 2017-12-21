@@ -6,10 +6,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "Comic.h"
+#include "SeamCarving.h"
 
 int extras(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo);
 size_t cost(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo);
-int c(const PNMImage **images, size_t comicWidth, size_t comicBorder, int **memo, size_t **cuts, int nb_cuts);
+size_t c(const PNMImage **images, size_t comicWidth, size_t comicBorder, int **memo, size_t **cuts, size_t nb_cuts);
 void Primary(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** memo, size_t ** cuts,size_t * nb_cuts);
 void setBackgroudColor(PNMImage *image,int R,int G,int B);
 
@@ -35,6 +36,10 @@ size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,s
 {
     size_t i,j,nb_cuts;
     size_t* positions;
+    int tmp;
+    size_t cellsOnLine=0;
+
+    PNMImage* output;
 
     //Memoization table
     int *memo[nbImages];
@@ -73,13 +78,48 @@ size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,s
     }
     fflush(stdout);
 
-    //Free used mem
-    for (i=0; i<nbImages; i++)
-        free(memo[i]);
+
     /***
      * TODO: put secondary optimisation here
      */
 
+    for(i=0;i<nb_cuts;i++)
+    {
+        tmp = extras(images,cuts[i][0],cuts[i][1],comicWidth,comicBorder,memo );
+        if(tmp !=0)// bonne taille on ne fait rien pour cette ligne
+        {
+            cellsOnLine=cuts[i][1]-cuts[i][0]+1;
+            if(tmp>0)   //trop grand -> on réduit
+            {
+                for(j=cuts[i][0];j<cuts[i][1];j++)
+                {
+                    output=reduceImageWidth(images[j], tmp/cellsOnLine);
+                    images[j]=output;
+                }
+                if(tmp%cellsOnLine !=0)
+                {
+                    output=reduceImageWidth(images[cuts[i][0]], tmp%cellsOnLine);
+                    images[cuts[i][0]]=output;
+                }
+            }
+            else        //trop petit -> on agrandit
+            {
+                for(j=cuts[i][0];j<cuts[i][1];j++)
+                {
+                    output=increaseImageWidth(images[j], abs(tmp)/cellsOnLine);
+                    images[j]=output;
+                }
+                if(abs(tmp)%cellsOnLine !=0)
+                {
+                    output=increaseImageWidth(images[cuts[i][0]], abs(tmp)%cellsOnLine);
+                    images[cuts[i][0]]=output;
+                }
+            }
+        }
+    }
+    //Free used mem
+    for (i=0; i<nbImages; i++)
+        free(memo[i]);
     //Return
     return positions;
 }
@@ -115,9 +155,13 @@ PNMImage* packComic(const PNMImage** images, size_t nbImages, size_t comicWidth,
     w=comicWidth;
     h=((images[0]->height)*disposition[nbImages-1])+(2*comicBorder)+((disposition[nbImages-1]-1)*comicBorder);
 
+
+    //initialization de l'image de destination
     PNMImage* final = createPNM(w,h);
     setBackgroudColor(final,255,255,255);
 
+
+    //parcours des images et leur écriture dans l'image de destination
     for(k=0;k<nbImages;k++)
     {
         y=disposition[k]*y_offset+comicBorder;
@@ -182,14 +226,25 @@ size_t cost(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_
     tmp = abs((int) tmp);
     return (size_t)tmp;
 }
-int c(const PNMImage **images, size_t comicWidth, size_t comicBorder, int **memo, size_t **cuts, int nb_cuts)
+/***
+ * Fonction qui calcule le cout de toute une ligne, à utiliser dans wrapImages()
+ *
+ * @param images
+ * @param comicWidth
+ * @param comicBorder
+ * @param memo
+ * @param cuts
+ * @param nb_cuts
+ * @return line_cost
+ */
+size_t c(const PNMImage **images, size_t comicWidth, size_t comicBorder, int **memo, size_t **cuts, size_t nb_cuts)
 {
-    int k,tmp=0;
+    size_t k,line_cost=0;
     for(k=0;k<=nb_cuts;k++)
     {
-        tmp+=cost(images,cuts[k][0],cuts[k][1],comicWidth,comicBorder,memo);
+        line_cost+=cost(images,cuts[k][0],cuts[k][1],comicWidth,comicBorder,memo);
     }
-    return tmp;
+    return line_cost;
 }
 
 /***
@@ -241,7 +296,7 @@ void Primary(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size
 }
 
 /***
- * This function pain the entire image in the desired color
+ * This function paint the entire image in the desired color
  *
  * @param image
  * @param R
