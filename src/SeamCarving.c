@@ -234,6 +234,7 @@ PNMImage* increaseImageWidth(const PNMImage* image, size_t k)
     //loop corresponding to the number of pixels in width to increase
     for(size_t l=0; l<k; l++)
     {
+
         //array containing the vertical energy seam for every pixel
         energies = malloc(new->height*new->width*sizeof(size_t));
         if (energies==NULL)
@@ -271,6 +272,7 @@ PNMImage* increaseImageWidth(const PNMImage* image, size_t k)
     }
     
     free(selectedSeam);
+
 
     return new;
 }
