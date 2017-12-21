@@ -231,6 +231,6 @@ PNMImage* increaseImageWidth(const PNMImage* image, size_t k)
         selectSeam(new->height, new->width, energies, moves, selectedSeam);
         
         tmp = createPNM(new->width, new->height);
-
     }
+    return new;
 }
