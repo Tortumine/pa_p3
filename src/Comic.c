@@ -91,7 +91,7 @@ size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,s
             cellsOnLine=cuts[i][1]-cuts[i][0]+1;
             if(tmp>0)   //trop grand -> on réduit
             {
-                for(j=cuts[i][0];j<cuts[i][1];j++)
+                for(j=cuts[i][0];j<=cuts[i][1];j++)
                 {
                     output=reduceImageWidth(images[j], tmp/cellsOnLine);
                     images[j]=output;
@@ -104,7 +104,7 @@ size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,s
             }
             else        //trop petit -> on agrandit
             {
-                for(j=cuts[i][0];j<cuts[i][1];j++)
+                for(j=cuts[i][0];j<=cuts[i][1];j++)
                 {
                     output=increaseImageWidth(images[j], abs(tmp)/cellsOnLine);
                     images[j]=output;
