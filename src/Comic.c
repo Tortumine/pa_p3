@@ -7,10 +7,11 @@
 #include <stdio.h>
 #include "Comic.h"
 #include "SeamCarving.h"
+#include "PNM.h"
 
 int extras(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo);
-size_t cost(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo);
-size_t c(const PNMImage **images, size_t comicWidth, size_t comicBorder, int **memo, size_t **cuts, size_t nb_cuts);
+unsigned long long cost(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo);
+unsigned long long c(const PNMImage **images, size_t comicWidth, size_t comicBorder, int **memo, size_t **cuts, size_t nb_cuts);
 void Primary(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** memo, size_t ** cuts,size_t * nb_cuts);
 void setBackgroudColor(PNMImage *image,int R,int G,int B);
 
@@ -91,7 +92,7 @@ size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,s
             cellsOnLine=cuts[i][1]-cuts[i][0]+1;
             if(tmp>0)   //trop grand -> on réduit
             {
-                for(j=cuts[i][0];j<cuts[i][1];j++)
+                for(j=cuts[i][0];j<=cuts[i][1];j++)
                 {
                     output=reduceImageWidth(images[j], tmp/cellsOnLine);
                     images[j]=output;
@@ -104,7 +105,7 @@ size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,s
             }
             else        //trop petit -> on agrandit
             {
-                for(j=cuts[i][0];j<cuts[i][1];j++)
+                for(j=cuts[i][0];j<=cuts[i][1];j++)
                 {
                     output=increaseImageWidth(images[j], abs(tmp)/cellsOnLine);
                     images[j]=output;
@@ -146,14 +147,14 @@ PNMImage* packComic(const PNMImage** images, size_t nbImages, size_t comicWidth,
     size_t y_offset=comicBorder+images[0]->height;
     size_t x=comicBorder,y=0;
 
-    size_t tmp=0;
+    size_t tmpF=0,tmpI=0;
 
 
     //calcul optimal de 'une disposition
     size_t* disposition = wrapImages(images, nbImages, comicWidth,comicBorder);
 
     w=comicWidth;
-    h=((images[0]->height)*disposition[nbImages-1])+(2*comicBorder)+((disposition[nbImages-1]-1)*comicBorder);
+    h=((images[0]->height)*(disposition[nbImages-1]+1))+(2*comicBorder)+((disposition[nbImages-1])*comicBorder);
 
 
     //initialization de l'image de destination
@@ -173,16 +174,16 @@ PNMImage* packComic(const PNMImage** images, size_t nbImages, size_t comicWidth,
             for(j=0;j<images[k]->width;j++)
             {
                 //calculate position in the final image
-                tmp=(x+j)+((y+i)*final->width);
-
+                tmpF=(x+j)+((y+i)*final->width);
+                tmpI=j+i*images[k]->width;
                 //print value to the final image
                 //only if the calculated position is on the bounds
                 // this if in necessary for tests (SIGABRT risk)
-                if(tmp<=w*h)
+                if(tmpF<=w*h)
                 {
-                    final->data[tmp].red=0;
-                    final->data[tmp].green=0;
-                    final->data[tmp].blue=0;
+                    final->data[tmpF].red=images[k]->data[tmpI].red;
+                    final->data[tmpF].green=images[k]->data[tmpI].green;
+                    final->data[tmpF].blue=images[k]->data[tmpI].blue;
                 }
             }
         }
@@ -219,12 +220,11 @@ int extras(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t
         return (int) tmp;
     }
 }
-size_t cost(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo)
+unsigned long long cost(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo)
 {
-    long int tmp = extras(images,i,j,comicWidth,comicBorder,Memo);
+    unsigned long long tmp = abs(extras(images,i,j,comicWidth,comicBorder,Memo));
     tmp = tmp*tmp*tmp;
-    tmp = abs((int) tmp);
-    return (size_t)tmp;
+    return tmp;
 }
 /***
  * Fonction qui calcule le cout de toute une ligne, à utiliser dans wrapImages()
@@ -237,9 +237,10 @@ size_t cost(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_
  * @param nb_cuts
  * @return line_cost
  */
-size_t c(const PNMImage **images, size_t comicWidth, size_t comicBorder, int **memo, size_t **cuts, size_t nb_cuts)
+unsigned long long c(const PNMImage **images, size_t comicWidth, size_t comicBorder, int **memo, size_t **cuts, size_t nb_cuts)
 {
-    size_t k,line_cost=0;
+    size_t k;
+    unsigned long long line_cost=0;
     for(k=0;k<=nb_cuts;k++)
     {
         line_cost+=cost(images,cuts[k][0],cuts[k][1],comicWidth,comicBorder,memo);
@@ -264,6 +265,7 @@ size_t c(const PNMImage **images, size_t comicWidth, size_t comicBorder, int **m
  */
 void Primary(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** memo, size_t ** cuts,size_t * nb_cuts)
 {
+    unsigned long long tmpa,tmpb;
     if(i>=j)
     {
         cuts[*nb_cuts-1][1]=(size_t) j;
@@ -276,8 +278,8 @@ void Primary(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size
         while(cond)
         {
             //comparaison des couts
-            size_t tmpa=cost(images,i,k,comicWidth,comicBorder,memo);
-            size_t tmpb=cost(images,i,k+1,comicWidth,comicBorder,memo);
+            tmpa=cost(images,i,k,comicWidth,comicBorder,memo);
+            tmpb=cost(images,i,k+1,comicWidth,comicBorder,memo);
             if(tmpa>tmpb)//si on peut encore ajouter une case
             {
                 k++;
