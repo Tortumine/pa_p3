@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "Comic.h"
 #include "SeamCarving.h"
+#include "PNM.h"
 
 int extras(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo);
 size_t cost(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo);
@@ -146,14 +147,14 @@ PNMImage* packComic(const PNMImage** images, size_t nbImages, size_t comicWidth,
     size_t y_offset=comicBorder+images[0]->height;
     size_t x=comicBorder,y=0;
 
-    size_t tmp=0;
+    size_t tmpF=0,tmpI=0;
 
 
     //calcul optimal de 'une disposition
     size_t* disposition = wrapImages(images, nbImages, comicWidth,comicBorder);
 
     w=comicWidth;
-    h=((images[0]->height)*disposition[nbImages-1])+(2*comicBorder)+((disposition[nbImages-1]-1)*comicBorder);
+    h=((images[0]->height)*(disposition[nbImages-1]+1))+(2*comicBorder)+((disposition[nbImages-1])*comicBorder);
 
 
     //initialization de l'image de destination
@@ -173,16 +174,16 @@ PNMImage* packComic(const PNMImage** images, size_t nbImages, size_t comicWidth,
             for(j=0;j<images[k]->width;j++)
             {
                 //calculate position in the final image
-                tmp=(x+j)+((y+i)*final->width);
-
+                tmpF=(x+j)+((y+i)*final->width);
+                tmpI=j+i*images[k]->width;
                 //print value to the final image
                 //only if the calculated position is on the bounds
                 // this if in necessary for tests (SIGABRT risk)
-                if(tmp<=w*h)
+                if(tmpF<=w*h)
                 {
-                    final->data[tmp].red=0;
-                    final->data[tmp].green=0;
-                    final->data[tmp].blue=0;
+                    final->data[tmpF].red=images[k]->data[tmpI].red;
+                    final->data[tmpF].green=images[k]->data[tmpI].green;
+                    final->data[tmpF].blue=images[k]->data[tmpI].blue;
                 }
             }
         }
