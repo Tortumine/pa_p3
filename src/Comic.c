@@ -7,10 +7,10 @@
 #include <stdio.h>
 #include "Comic.h"
 
-int extras(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** Memo);
-int cost(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** Memo);
+int extras(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo);
+size_t cost(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo);
 int c(const PNMImage **images, size_t comicWidth, size_t comicBorder, int **memo, size_t **cuts, int nb_cuts);
-void Primary(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** memo, size_t ** cuts,size_t * nb_cuts);
+void Primary(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** memo, size_t ** cuts,size_t * nb_cuts);
 void setBackgroudColor(PNMImage *image,int R,int G,int B);
 
 
@@ -152,9 +152,9 @@ PNMImage* packComic(const PNMImage** images, size_t nbImages, size_t comicWidth,
 }
 
 
-int extras(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** Memo)
+int extras(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo)
 {
-    int tmp;
+    long int tmp;
     //si la valeur est sauvegardée
     if(Memo[i][j] != -13) return Memo[i][j];
     else
@@ -171,16 +171,16 @@ int extras(const PNMImage** images,int i, int j, size_t comicWidth, size_t comic
             //calcul (case actuelle + espace + extra(cases suivante))-largeur souhaitée
             tmp = images[i]->width + comicBorder + extras(images,i+1,j,comicWidth,comicBorder,Memo);
         }
-        Memo[i][j]=tmp;
-        return tmp;
+        Memo[i][j]= (int) tmp;
+        return (int) tmp;
     }
 }
-int cost(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** Memo)
+size_t cost(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo)
 {
-    int tmp = extras(images,i,j,comicWidth,comicBorder,Memo);
+    long int tmp = extras(images,i,j,comicWidth,comicBorder,Memo);
     tmp = tmp*tmp*tmp;
-    tmp = abs(tmp);
-    return tmp;
+    tmp = abs((int) tmp);
+    return (size_t)tmp;
 }
 int c(const PNMImage **images, size_t comicWidth, size_t comicBorder, int **memo, size_t **cuts, int nb_cuts)
 {
@@ -207,30 +207,30 @@ int c(const PNMImage **images, size_t comicWidth, size_t comicBorder, int **memo
  *
  * Les données utiles sont dans cuts et nb_cuts
  */
-void Primary(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** memo, size_t ** cuts,size_t * nb_cuts)
+void Primary(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** memo, size_t ** cuts,size_t * nb_cuts)
 {
     if(i>=j)
     {
-        cuts[*nb_cuts-1][1]=j;
+        cuts[*nb_cuts-1][1]=(size_t) j;
         return;
     }
     else
     {
         int cond = 1;
-        int k = i;
+        size_t k = i;
         while(cond)
         {
             //comparaison des couts
-            int tmpa=cost(images,i,k,comicWidth,comicBorder,memo);
-            int tmpb=cost(images,i,k+1,comicWidth,comicBorder,memo);
+            size_t tmpa=cost(images,i,k,comicWidth,comicBorder,memo);
+            size_t tmpb=cost(images,i,k+1,comicWidth,comicBorder,memo);
             if(tmpa>tmpb)//si on peut encore ajouter une case
             {
                 k++;
             }
             else//si la configuration actuelle est optimale
             {
-                cuts[*nb_cuts][0]=i;
-                cuts[*nb_cuts][1]=k;
+                cuts[*nb_cuts][0]= (size_t) i;
+                cuts[*nb_cuts][1]= (size_t) k;
                 *nb_cuts=*nb_cuts + 1;
                 Primary(images,k+1,j,comicWidth,comicBorder,memo,cuts,nb_cuts);
                 cond =0;
