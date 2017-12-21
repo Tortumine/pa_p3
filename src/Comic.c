@@ -5,13 +5,12 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "PNM.h"
-
-#define RGB_COMPONENT_COLOR 255
+#include "Comic.h"
 
 int extras(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** Memo);
 int cost(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** Memo);
-void Primary(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** memo, int** cuts,int* nb_cuts);
+int c(const PNMImage **images, size_t comicWidth, size_t comicBorder, int **memo, size_t **cuts, int nb_cuts);
+void Primary(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** memo, size_t ** cuts,size_t * nb_cuts);
 void setBackgroudColor(PNMImage *image,int R,int G,int B);
 
 
@@ -34,7 +33,7 @@ void setBackgroudColor(PNMImage *image,int R,int G,int B);
  * ------------------------------------------------------------------------- */
 size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,size_t comicBorder)
 {
-    int i,j,nb_cuts;
+    size_t i,j,nb_cuts;
     size_t* positions;
 
     //Memoization table
@@ -46,9 +45,9 @@ size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,s
             memo[i][j] = -13;
 
     //cuts table
-    int *cuts[nbImages];
+    size_t *cuts[nbImages];
     for (i=0; i<nbImages; i++)
-        cuts[i] = (int *)malloc(2 * sizeof(int));
+        cuts[i] = (size_t *)malloc(2 * sizeof(size_t));
     nb_cuts=0;
 
 
@@ -69,7 +68,7 @@ size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,s
     //
     for(i=0;i<nbImages;i++)
     {
-        printf("\t%d",i+1);
+        printf("\t%ld",i+1);
         if(positions[i]!=positions[i+1])printf("\n");
     }
     fflush(stdout);
@@ -102,12 +101,12 @@ size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,s
  * ------------------------------------------------------------------------- */
 PNMImage* packComic(const PNMImage** images, size_t nbImages, size_t comicWidth, size_t comicBorder)
 {
-    int i,j,k;
+    size_t i,j,k;
     size_t w,h;
-    int y_offset=comicBorder+images[0]->height;
-    int x=comicBorder,y=0;
+    size_t y_offset=comicBorder+images[0]->height;
+    size_t x=comicBorder,y=0;
 
-    int tmp=0;
+    size_t tmp=0;
 
 
     //calcul optimal de 'une disposition
@@ -123,7 +122,7 @@ PNMImage* packComic(const PNMImage** images, size_t nbImages, size_t comicWidth,
     {
         y=disposition[k]*y_offset+comicBorder;
 
-        printf("\t %d:%d",x,y);
+        printf("\t %ld:%ld",x,y);
         for(i=0;i<images[k]->height;i++)
         {
             //for each point of the images[k]
@@ -183,7 +182,7 @@ int cost(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBo
     tmp = abs(tmp);
     return tmp;
 }
-int c(const PNMImage** images,int nb_i, size_t comicWidth, size_t comicBorder,int** memo, int** cuts,int nb_cuts)
+int c(const PNMImage **images, size_t comicWidth, size_t comicBorder, int **memo, size_t **cuts, int nb_cuts)
 {
     int k,tmp=0;
     for(k=0;k<=nb_cuts;k++)
@@ -208,7 +207,7 @@ int c(const PNMImage** images,int nb_i, size_t comicWidth, size_t comicBorder,in
  *
  * Les données utiles sont dans cuts et nb_cuts
  */
-void Primary(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** memo, int** cuts,int* nb_cuts)
+void Primary(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** memo, size_t ** cuts,size_t * nb_cuts)
 {
     if(i>=j)
     {
@@ -251,7 +250,7 @@ void Primary(const PNMImage** images,int i, int j, size_t comicWidth, size_t com
  */
 void setBackgroudColor(PNMImage *image,int R,int G,int B)
 {
-    int i;
+    size_t i;
     if(image){
 
         for(i=0;i<image->width*image->height;i++){

@@ -17,5 +17,7 @@ set(SEAMCARVING_SOURCE_FILES
         src/PNM.h
         src/mainSeamCarving.c)
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --pedantic -Wall -Wextra -Wmissing-prototypes")
+
 add_executable(mainComic ${COMIC_SOURCE_FILES})
 add_executable(mainSeamCarving ${COMIC_SOURCE_FILES})
