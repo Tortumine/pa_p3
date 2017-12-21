@@ -2,7 +2,6 @@
 #include <stdlib.h>
 
 #include "Comic.h"
-#include "PNM.h"
 
 
 /* ------------------------------------------------------------------------- *\
@@ -38,7 +37,7 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
     size_t comicBorder = 0;
-    if(sscanf (argv[2], "%zu", &comicWidth) != 1)
+    if(sscanf (argv[2], "%zu", &comicBorder) != 1) //TODO: this line was" if(sscanf (argv[2], "%zu", &comicWidth) != 1) "
     {
         fprintf(stderr, "Aborting; Border should be an "
                         "unsigned integer. Got '%s'\n", argv[2]);
@@ -46,7 +45,7 @@ int main(int argc, char* argv[])
     }
 
 
-    size_t nbImages = argc - 4;
+    size_t nbImages = (size_t) (argc - 4);
 
     PNMImage** images = (PNMImage**) malloc((nbImages) * sizeof(PNMImage*));
     if (!images)

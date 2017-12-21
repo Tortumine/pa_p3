@@ -48,4 +48,6 @@ size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,
 PNMImage* packComic(const PNMImage** images, size_t nbImages, size_t comicWidth,
                     size_t comicBorder);
 
+
+
 #endif // _COMICS_H_
