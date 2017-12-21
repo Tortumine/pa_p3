@@ -195,8 +195,6 @@ PNMImage* packComic(const PNMImage** images, size_t nbImages, size_t comicWidth,
 
     return final;
 }
-
-
 int extras(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo)
 {
     long int tmp;
@@ -227,7 +225,7 @@ unsigned long long cost(const PNMImage** images,size_t i, size_t j, size_t comic
     return tmp;
 }
 /***
- * Fonction qui calcule le cout de toute une ligne, à utiliser dans wrapImages()
+ * Fonction qui calcule le cout total, à utiliser dans wrapImages()
  *
  * @param images
  * @param comicWidth
@@ -247,7 +245,6 @@ unsigned long long c(const PNMImage **images, size_t comicWidth, size_t comicBor
     }
     return line_cost;
 }
-
 /***
  * Fonction de découpe primaire, agence les cases de façon gloutonne donnant priorité au premières cases.
  * On essaye d'approcjher le plus possible la largeur pour la première ligne, puis on coupe et on continue pour la seconde, etc
