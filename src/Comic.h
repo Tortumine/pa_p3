@@ -50,5 +50,4 @@ PNMImage* packComic(const PNMImage** images, size_t nbImages, size_t comicWidth,
 
 
 
-
 #endif // _COMICS_H_

@@ -7,9 +7,13 @@
 #include <stdio.h>
 #include "PNM.h"
 
+#define RGB_COMPONENT_COLOR 255
+
 int extras(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** Memo);
 int cost(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** Memo);
 void Primary(const PNMImage** images,int i, int j, size_t comicWidth, size_t comicBorder,int** memo, int** cuts,int* nb_cuts);
+void setBackgroudColor(PNMImage *image,int R,int G,int B);
+
 
 /* ------------------------------------------------------------------------- *
  * Compute the optimal positions of the images on the page.
@@ -31,7 +35,7 @@ void Primary(const PNMImage** images,int i, int j, size_t comicWidth, size_t com
 size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,size_t comicBorder)
 {
     int i,j,nb_cuts;
-    size_t* ret;
+    size_t* positions;
 
     //Memoization table
     int *memo[nbImages];
@@ -40,6 +44,7 @@ size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,s
     for (i = 0; i <  nbImages; i++)
         for (j = 0; j < nbImages; j++)
             memo[i][j] = -13;
+
     //cuts table
     int *cuts[nbImages];
     for (i=0; i<nbImages; i++)
@@ -49,25 +54,35 @@ size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,s
 
     Primary(images,0,nbImages-1,comicWidth,comicBorder,memo,cuts,&nb_cuts);
 
-    // convertion de la disposition en formar demandé (cf specification)
-    ret=malloc(nbImages* sizeof(size_t));
+    // convertion de la disposition en format demandé (cf specification)
+    positions=malloc(nbImages* sizeof(size_t));
     int k =0;
     for(i=0;i<nb_cuts;i++)
     {
         for(j=cuts[i][0];j<=cuts[i][1];j++)
         {
-            ret[k]=i;
+            positions[k]=i;
             k++;
         }
     }
 
+    //
     for(i=0;i<nbImages;i++)
     {
         printf("\t%d",i+1);
-        if(ret[i]!=ret[i+1])printf("\n");
+        if(positions[i]!=positions[i+1])printf("\n");
     }
-
     fflush(stdout);
+
+    //Free used mem
+    for (i=0; i<nbImages; i++)
+        free(memo[i]);
+    /***
+     * TODO: put secondary optimisation here
+     */
+
+    //Return
+    return positions;
 }
 
 /* ------------------------------------------------------------------------- *
@@ -87,7 +102,54 @@ size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,s
  * ------------------------------------------------------------------------- */
 PNMImage* packComic(const PNMImage** images, size_t nbImages, size_t comicWidth, size_t comicBorder)
 {
-    wrapImages(images, nbImages, comicWidth,comicBorder);
+    int i,j,k;
+    size_t w,h;
+    int y_offset=comicBorder+images[0]->height;
+    int x=comicBorder,y=0;
+
+    int tmp=0;
+
+
+    //calcul optimal de 'une disposition
+    size_t* disposition = wrapImages(images, nbImages, comicWidth,comicBorder);
+
+    w=comicWidth;
+    h=((images[0]->height)*disposition[nbImages-1])+(2*comicBorder)+((disposition[nbImages-1]-1)*comicBorder);
+
+    PNMImage* final = createPNM(w,h);
+    setBackgroudColor(final,255,255,255);
+
+    for(k=0;k<nbImages;k++)
+    {
+        y=disposition[k]*y_offset+comicBorder;
+
+        printf("\t %d:%d",x,y);
+        for(i=0;i<images[k]->height;i++)
+        {
+            //for each point of the images[k]
+            for(j=0;j<images[k]->width;j++)
+            {
+                //calculate position in the final image
+                tmp=(x+j)+((y+i)*final->width);
+
+                //print value to the final image
+                //only if the calculated position is on the bounds
+                // this if in necessary for tests (SIGABRT risk)
+                if(tmp<=w*h)
+                {
+                    final->data[tmp].red=0;
+                    final->data[tmp].green=0;
+                    final->data[tmp].blue=0;
+                }
+            }
+        }
+
+        //Calcul des coordonnées des cases
+        if(disposition[k]!=disposition[k+1]) x=comicBorder;
+        else x+=images[k]->width+comicBorder;
+    }
+
+    return final;
 }
 
 
@@ -159,13 +221,14 @@ void Primary(const PNMImage** images,int i, int j, size_t comicWidth, size_t com
         int k = i;
         while(cond)
         {
+            //comparaison des couts
             int tmpa=cost(images,i,k,comicWidth,comicBorder,memo);
             int tmpb=cost(images,i,k+1,comicWidth,comicBorder,memo);
-            if(tmpa>tmpb)
+            if(tmpa>tmpb)//si on peut encore ajouter une case
             {
                 k++;
             }
-            else
+            else//si la configuration actuelle est optimale
             {
                 cuts[*nb_cuts][0]=i;
                 cuts[*nb_cuts][1]=k;
@@ -178,3 +241,23 @@ void Primary(const PNMImage** images,int i, int j, size_t comicWidth, size_t com
     }
 }
 
+/***
+ * This function pain the entire image in the desired color
+ *
+ * @param image
+ * @param R
+ * @param G
+ * @param B
+ */
+void setBackgroudColor(PNMImage *image,int R,int G,int B)
+{
+    int i;
+    if(image){
+
+        for(i=0;i<image->width*image->height;i++){
+            image->data[i].red=(unsigned char)R;
+            image->data[i].green=(unsigned char)G;
+            image->data[i].blue=(unsigned char)B;
+        }
+    }
+}
