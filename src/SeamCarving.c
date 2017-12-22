@@ -1,5 +1,6 @@
 //
-// Created by tortumine on 19/12/17.
+// Sadzot Antoine (s173130) 
+// Mazurchyk Aliaksei (s174957)
 //
 #include <stdlib.h>
 #include <stddef.h>
@@ -375,22 +376,25 @@ PNMImage* increaseImageWidth(const PNMImage* image, size_t k)
             selectedSeam = malloc(definitive->height*kP*sizeof(size_t));
 
         //loop corresponding to the number of pixels in width to increase max 20% of original picture
-        for(size_t l=0; l<kP; l++)
+        size_t l;
+        for(l=0; l<kP; l++)
         {
             seamsIncrease(definitive, energies, moves, selectedSeam, l, kP);
-            selectSeamIncrease(definitive->height, definitive->width, energies, moves, selectedSeam,l,kP);                 
-            //temporary image of width new->width+1
-            tmp = createPNM(new->width+1, new->height);
-            size_t jP;
-            //create the new image of width +1
-            for(size_t i=0; i<new->height;i++)
+            selectSeamIncrease(definitive->height, definitive->width, energies, moves, selectedSeam,l,kP);         
+        }
+        tmp = createPNM(new->width+l, new->height);
+        size_t jP;
+        //create the new image of width +1
+        for(size_t i=0; i<new->height;i++)
+        {
+            jP=0;
+            for(size_t j=0; j<new->width;j++)
             {
-                jP=0;
-                for(size_t j=0; j<new->width;j++)
+                tmp->data[i*tmp->width + jP] = new->data[i*new->width + j];
+                //duplicate the pixels in the seam
+                for(size_t o=0;o<l;o++)
                 {
-                    tmp->data[i*tmp->width + jP] = new->data[i*new->width + j];
-                    //duplicate the pixels in the seam
-                    if(j == selectedSeam[i*kP + l])
+                    if(j == selectedSeam[i*kP + o])
                     {
                         jP++;
                         if(j<new->width-1)
@@ -407,12 +411,12 @@ PNMImage* increaseImageWidth(const PNMImage* image, size_t k)
                             tmp->data[i*tmp->width + jP] = new->data[i*new->width + j];
                         }
                     }
-                    jP++;   
                 }
-            } 
-            freePNM(new);
-            new = tmp;//the tmp image becomes the new current image
-        }
+                jP++;   
+            }
+        } 
+        freePNM(new);
+        new = tmp;//the tmp image becomes the new current image
         free(energies);
         free(moves);
         free(selectedSeam);
