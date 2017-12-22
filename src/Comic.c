@@ -2,6 +2,12 @@
 // Created by tortumine on 19/12/17.
 //
 
+//TODO: translate all comments
+//TODO: uniforming comments style "/***" preferred
+//TODO: clean code
+//TODO: do something with c return value
+
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -11,8 +17,7 @@
 
 int extras(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo);
 unsigned long long cost(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** Memo);
-unsigned long long c(const PNMImage **images, size_t comicWidth, size_t comicBorder, int **memo, size_t **cuts, size_t nb_cuts);
-void Primary(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** memo, size_t ** cuts,size_t * nb_cuts);
+unsigned long long c(const PNMImage **images, size_t i, size_t j, size_t comicWidth, size_t comicBorder, int **memo, size_t **cuts,size_t *nb_cuts);
 void setBackgroudColor(PNMImage *image,int R,int G,int B);
 
 
@@ -57,7 +62,7 @@ size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,s
     nb_cuts=0;
 
 
-    Primary(images,0,nbImages-1,comicWidth,comicBorder,memo,cuts,&nb_cuts);
+    c(images, 0, nbImages - 1, comicWidth, comicBorder, memo, cuts, &nb_cuts);
 
     // convertion de la disposition en format demandé (cf specification)
     positions=malloc(nbImages* sizeof(size_t));
@@ -78,11 +83,6 @@ size_t* wrapImages(const PNMImage** images, size_t nbImages, size_t comicWidth,s
         if(positions[i]!=positions[i+1])printf("\n");
     }
     fflush(stdout);
-
-
-    /***
-     * TODO: put secondary optimisation here
-     */
 
     for(i=0;i<nb_cuts;i++)
     {
@@ -224,27 +224,7 @@ unsigned long long cost(const PNMImage** images,size_t i, size_t j, size_t comic
     tmp = tmp*tmp*tmp;
     return tmp;
 }
-/***
- * Fonction qui calcule le cout total, à utiliser dans wrapImages()
- *
- * @param images
- * @param comicWidth
- * @param comicBorder
- * @param memo
- * @param cuts
- * @param nb_cuts
- * @return line_cost
- */
-unsigned long long c(const PNMImage **images, size_t comicWidth, size_t comicBorder, int **memo, size_t **cuts, size_t nb_cuts)
-{
-    size_t k;
-    unsigned long long line_cost=0;
-    for(k=0;k<=nb_cuts;k++)
-    {
-        line_cost+=cost(images,cuts[k][0],cuts[k][1],comicWidth,comicBorder,memo);
-    }
-    return line_cost;
-}
+
 /***
  * Fonction de découpe primaire, agence les cases de façon gloutonne donnant priorité au premières cases.
  * On essaye d'approcjher le plus possible la largeur pour la première ligne, puis on coupe et on continue pour la seconde, etc
@@ -260,13 +240,14 @@ unsigned long long c(const PNMImage **images, size_t comicWidth, size_t comicBor
  *
  * Les données utiles sont dans cuts et nb_cuts
  */
-void Primary(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size_t comicBorder,int** memo, size_t ** cuts,size_t * nb_cuts)
+unsigned long long c(const PNMImage **images, size_t i, size_t j, size_t comicWidth, size_t comicBorder, int **memo, size_t **cuts,
+       size_t *nb_cuts)
 {
     unsigned long long tmpa,tmpb;
     if(i>=j)
     {
         cuts[*nb_cuts-1][1]=(size_t) j;
-        return;
+        return cost(images,j, j,comicWidth,comicBorder,memo);
     }
     else
     {
@@ -286,11 +267,11 @@ void Primary(const PNMImage** images,size_t i, size_t j, size_t comicWidth, size
                 cuts[*nb_cuts][0]= (size_t) i;
                 cuts[*nb_cuts][1]= (size_t) k;
                 *nb_cuts=*nb_cuts + 1;
-                Primary(images,k+1,j,comicWidth,comicBorder,memo,cuts,nb_cuts);
+                tmpa+=c(images, k + 1, j, comicWidth, comicBorder, memo, cuts, nb_cuts);
                 cond =0;
             }
         }
-        return;
+        return tmpa;
     }
 }
 
