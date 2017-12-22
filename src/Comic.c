@@ -2,7 +2,6 @@
 
 #include <stddef.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include "Comic.h"
 #include "SeamCarving.h"
 #include "PNM.h"
