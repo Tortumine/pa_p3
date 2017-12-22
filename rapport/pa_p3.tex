@@ -97,11 +97,20 @@
 \section{Algorithme par programmation dynamique}
 \subsection{Approche par recherche exhaustive}
 \subsubsection{Comic}
+Pour $n$ cases, il y a $n-1$ endroits de coupe possible (entre les cases). Entra chaque case il faut choisir s'il faut passer à la ligne ou continuer. Un choix binaire donc. Il y a donc $2^{n-1}$ possibilités pour agencer $n$ cases.
 \subsubsection{Seam carving}
 Pour créer une couture, on part d'un pixel de la première rangée. De là, on a le choix entre trois directions pour continuer la couture à la rangée suivante. Pour avancer d'encore une rangée, on a encore le choix entre trois directions... On a donc (en prenant en compte les bords gauche et droit) une complexité $O(m*3^n)$ où m est le nombre de pixels de départ à la première rangée et n le nombre de pixels en hauteur.
 
 \subsection{Formulation récursive de la fonction de coût}
 \subsubsection{Comic}
+$$
+c(n) = \left\{
+	\begin{array}{ll}
+		cost(n) & si\ j==j \\
+		E(i,j)+min(C(i-1,j-1),C(i-1,j),C(i-1,j+1)) & sinon
+	\end{array}
+\right.
+$$
 \subsubsection{Seam carving}
 $$
 C(i,j) = \left\{
