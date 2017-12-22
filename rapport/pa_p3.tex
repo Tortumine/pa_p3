@@ -129,9 +129,33 @@ Graphe des appels récursif
       \centering
       \includegraphics[scale=0.5]{GrapheSeamCarving.png}
    \end{figure}
-
 \subsection{Algorithme des fonctions de coût}
-\subsubsection{Comic}
+\subsubsection{Comic}La fonction \textbf{ c(image,i,j)} permet de calculer la disposition minimale ainsi que son cout. Pour réduire les temps de calcul, cette fonction utilise la mémoïsation afin de sauvegarder la différence de largeur entre un ensemble d'images et la largeur souhaitée. Ceci ce fait en utilisant un tableau à deux dimensions (\textbf{memo} de taille $n \times n$). La sauvegarde se fait à l'intérieur de la fonction \textbf{cost(i,j,width)}.
+
+Les résultats de découpe se fond dans la tableau \textbf{cuts}.
+\begin{lstlisting}[frame=single]
+c (image, i, j, memo, cuts)
+	if(i>=j)
+	{
+		ADD i to cuts
+		return cost(j,j), memo, cuts 
+	}
+	else
+	{
+		k=i
+		while(true)
+		{
+			tmp=cost(k,j)
+			if(tmp>cost(k+1,j,memo)
+				k++
+			else
+				ADD k to cuts
+				tmp += c(image, k, j, memo, cuts)
+				break
+		}
+		return tmp, memo, cuts
+	}
+\end{lstlisting}
 \subsubsection{Seam carving}
 La fonction\textbf{ E(image,i,j)} est la fonction qui calcule l'énergie d'un pixel. Le tableau \textbf{energies} contient les coutures d'énergie minimales pour atteindre chaque pixel depuis la première rangée. Le tableau \textbf{moves} contient le déplacement à faire (gauche, centre, droite) pour suivre une couture de bas en haut. 
 \begin{lstlisting}[frame=single]
@@ -163,6 +187,8 @@ return energies, moves
 
 \subsection{Complexité en temps et en espace}
 \subsubsection{Comic}
+La complexité en temps de l'algorithme est $\Theta(n)$. La fonction \textbf{cost()} peut potentiellement ralentir l'exécution sa complexité est $O(\frac{n^2}{2})$ dans le pire des cas.
+La complexité en espace est $\Theta(n \times (n+2))$. Les images, le tableau $n^2$ pour la mémoïsation et un tableau de découpe de taille $n$.
 \subsubsection{Seam carving}
 La complexité en temps de l'algorithme est $\Theta(n*m)$
 La complexité en espace est $\Theta(3*n*m)$. Car il y a trois tableaux de dimension n*m. L'image en elle même, plus un tableau pour enregistrer les coutures d'énergie et un tableau pour enregistrer les déplacements à faire pour suivre une couture de bas en haut.
