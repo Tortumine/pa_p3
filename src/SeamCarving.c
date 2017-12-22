@@ -1,7 +1,6 @@
 //
 // Created by tortumine on 19/12/17.
 //
-#include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include "PNM.h"
@@ -221,8 +220,6 @@ PNMImage* reduceImageWidth(const PNMImage* image, size_t k)
     PNMImage* tmp;
     //array containing the position of the pixels visited by the selected seam for every row of the image
     selectedSeam = malloc(image->height*sizeof(size_t));
-    if (selectedSeam==NULL)
-        printf("Erreur d'allocation pour selectedSeam\n");
     //Current image
     PNMImage* new = createPNM(image->width, image->height);
     for(size_t i=0; i < image->height;i++)
@@ -233,12 +230,8 @@ PNMImage* reduceImageWidth(const PNMImage* image, size_t k)
     {
         //array containing the vertical energy seam for every pixel
         energies = malloc(image->height*image->width*sizeof(size_t));
-        if (energies==NULL)
-            printf("Erreur d'allocation pour energies\n");
         //array containing the moves to follow any seam 
         moves = malloc(image->height*image->width*sizeof(int));
-        if (moves==NULL)
-            printf("Erreur d'allocation pour moves\n");
 
         seams(new, energies, moves);
         selectSeam(new->height, new->width, energies, moves, selectedSeam);
@@ -372,20 +365,14 @@ PNMImage* increaseImageWidth(const PNMImage* image, size_t k)
                 definitive->data[i*definitive->width+j] = new->data[i*new->width+j];
         //array containing the vertical energy seam for every pixel
             energies = malloc(definitive->height*definitive->width*sizeof(size_t));
-            if (energies==NULL)
-                printf("Erreur d'allocation pour energies\n");
             //array containing the moves to follow any seam
             moves = malloc(definitive->height*definitive->width*sizeof(int));
-            if (moves==NULL)
-                printf("Erreur d'allocation pour moves\n");
 
         if(o < (int)kP)
             kP=o;
 
         //array containing the position of the pixels visited by the selected seam for every row of the image
             selectedSeam = malloc(definitive->height*kP*sizeof(size_t));
-            if (selectedSeam==NULL)
-            printf("Erreur d'allocation pour selectedSeam\n");
 
         //loop corresponding to the number of pixels in width to increase max 20% of original picture
         for(size_t l=0; l<kP; l++)
