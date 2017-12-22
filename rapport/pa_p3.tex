@@ -97,17 +97,18 @@
 \section{Algorithme par programmation dynamique}
 \subsection{Approche par recherche exhaustive}
 \subsubsection{Comic}
-Pour $n$ cases, il y a $n-1$ endroits de coupe possible (entre les cases). Entre chaque case il faut choisir s'il faut passer à la ligne ou continuer. Un choix binaire donc. Il y a donc $2^{n-1}$ possibilités pour agencer $n$ cases.
+Pour $n$ cases, il y a $n-1$ endroits de coupe possible (entre les cases). Entra chaque case il faut choisir s'il faut passer à la ligne ou continuer. Un choix binaire donc. Il y a donc $2^{n-1}$ possibilités pour agencer $n$ cases.
 \subsubsection{Seam carving}
 Pour créer une couture, on part d'un pixel de la première rangée. De là, on a le choix entre trois directions pour continuer la couture à la rangée suivante. Pour avancer d'encore une rangée, on a encore le choix entre trois directions... On a donc (en prenant en compte les bords gauche et droit) une complexité $O(m*3^n)$ où m est le nombre de pixels de départ à la première rangée et n le nombre de pixels en hauteur.
 
 \subsection{Formulation récursive de la fonction de coût}
 \subsubsection{Comic}
 $$
-c(n) = \left\{
+c(i,j) = \left\{
 	\begin{array}{ll}
-		cost(n) & si\ j==j \\
-		E(i,j)+min(C(i-1,j-1),C(i-1,j),C(i-1,j+1)) & sinon
+		cost(i,j) & si\ i==j \\
+		k++ & sinon si cost(i,k)>cost(i,k+1) (à partir de k=i)\\
+		c(k) & sinon
 	\end{array}
 \right.
 $$
@@ -123,6 +124,11 @@ $$
 
 \subsection{Graphe des appels récursifs pour un problème de petite taille}
 \subsubsection{Comic}
+Graphe des appels récursif
+ \begin{figure} [h]
+      \centering
+      \includegraphics[scale=0.5]{ComicDiagram.png}
+   \end{figure}
 \subsubsection{Seam carving}
 Graphe des appels récursif
  \begin{figure} [h]
@@ -156,7 +162,7 @@ c (image, i, j, memo, cuts)
 		return tmp, memo, cuts
 	}
 \end{lstlisting}
-\subsubsection{Seam carving} \label{sssec:num1}
+\subsubsection{Seam carving}
 La fonction\textbf{ E(image,i,j)} est la fonction qui calcule l'énergie d'un pixel. Le tableau \textbf{energies} contient les coutures d'énergie minimales pour atteindre chaque pixel depuis la première rangée. Le tableau \textbf{moves} contient le déplacement à faire (gauche, centre, droite) pour suivre une couture de bas en haut. 
 \begin{lstlisting}[frame=single]
 C (image, energies, moves)
@@ -195,31 +201,33 @@ La complexité en espace est $\Theta(3*n*m)$. Car il y a trois tableaux de dimen
 
 \section{Fonctions de réduction et d'augmentation d'images}
 \subsection{Choix d'implémentation}
-\subsubsection{ImagewidthReduction}
-Plusieurs fonctions auxiliaires sont utilisées pour réduire la taille d'une image.
-La fonction \textbf{pixelEnergy} renvoie l'énergie calculée d'un pixel appartenant à une image donnés en argument.
+Les deux fonctions \textbf{ImageWidthReduction} et \textbf{ImageWidthexpansion} sont très proches dans leur fonctionnement. La seule différence est lorsqu'on crée une nouvelle image temporaire, respectivement plus grande ou plus petite de 1 pixel.
 
-Cette fonction est utilisée par la fonction \textbf{seams}, qui est une implémentation de l'algorithme de la section \ref{sssec:num1}. 
+Une fonction \textbf{energie} renvoie l'énergie calculée d'un pixel donné en argument avec l'image auquel il appartient.
 
-Ensuite, la fonction \textbf{selectSeam} parcourt le tableau d'énergies généré à la fonction précédente pour déterminer la couture d'énergie la plus faible.
+La fonction \textbf{seams} utilise la fonction \textbf{energie} pour remplir le tableau contenant les coutures d'énergie minimales pour chaque pixel de l'image transmise en argument. Elle remplit également le tableau indiquant les déplacements à effectuer pour suivre les coutures minimales depuis la dernière ligne de l'image.
 
-Dans la fonction principale, une boucle correspond au nombre de pixels à diminuer sur la largeur de l'image. Deux images temporaires sont utilisées. Initialement, la première image a une largeur identique à l'image originelle. La seconde image est moins large d'un pixel. A chaque itération, une couture minimale est déterminée sur la première image temporaire. La seconde image temporaire est générée en retirant les pixels de la couture. A la fin de l'iteration, la première image est supprimée et remplacée par la seconde.
+La fonction \textbf{selectedSeam} parcourt le tableau  des coutures pour enregistrer le numéro de colonne de chaque pixel de la couture minimale dans un vecteur de taille correspondant à la hauteur de l'image. 
 
-\subsubsection{ImagewidthExpansion}
-La fonction a un fonctionnement similaire à l'image précédente. Cependant, conformément aux consignes, l'image est élargie par "lots" de k itérations correspondant à maximum 20\% de la largeur de l'image. Lors de ces itérations, un tableau contenant les k coutures d'énergie minimales sur l'image originale est généré. Pour ce faire on reprend la fonction \textbf{seams} décrite précédemment. Mais elle est modifiée pour pouvoir rejeter systématiquement les coutures précédemment générées. Dans l'implémentation actuelle, une nouvelle image temporaire de largeur +1 est générée à chaque itération (et donc à chaque nouvelle couture déterminée). Idéalement, cette nouvelle image pourrait n'être créée qu'une fois toutes les coutures déterminées.
-Si le nombre de pixels à ajouter est plus important que 20\%, on recommence les étapes décrites au dessus. Jusqu'à ce que le résultat ait la largeur choisie.
+Les opérations décrites ci-dessous sont effectuées un nombre de fois correspondant au nombre de pixels que l'on souhaite ajouter ou diminuer sur la largeur de l'image.
+
+Au sein des fonctions \textbf{ImageWidthReduction} et \textbf{ImageWidthexpansion}, pour chaque iteration, on sélectionne la couture d'énergie minimale au moyen des fonctions décrites ci-dessus. Ensuite, pour générer une nouvelle image de largeur +/- 1 à chaque iteration, on travaille avec deux pointeurs vers deux images temporaires. L'image pointée par "new" est initialement de la même taille que l'image originelle. L'image pointée par "tmp" est l'image augmentée ou réduite d'un pixel en largeur par rapport à new. Lorsqu'une couture est sélectionnée sur l'image de "new", l'image de "tmp" est construite en tenant compte de la couture. Ensuite, l'image pointée par "new" est détruite, et "new" pointe vers l'image de "tmp". A l'itération suivante, "tmp" pointe vers une nouvelle image, plus petite ou plus grande que "new".
 
 \subsection{Complexité en temps et en espace}
-
-\subsubsection{ImageWidthReduction}
-\textbf{Complexité en espace}. En plus de l'image originelle, deux autres images avec un écart de largeur égal à 1 sont générées pour les calculs. En fonction des itérations, leur largeur évolue entre la largeur originelle et la largeur cible. A ces deux images s'ajoutent le tableau contenant les coutures et le tableau contenant les déplacements. Les largeurs des deux tableaux évoluent comme les images. Et à cela s'ajoute un vecteur de taille "n", contenant les numéros de colonne des pixels impliqués dans la couture sélectionnée.
-	La complexité en espace est donc maximale au début de la fonction : $\theta(4(nm) + n(m-1) + n)$ = $\theta(5nm)$
-\textbf{Complexité en temps}. Pour diminuer ou augmenter une image de 1px en largeur la complexité en temps est la suivante :
-L'image est parcourue une fois pour déterminer les coutures($\theta(n*m)$). Elle est ensuite parcourue en largeur et en hauteur pour déterminer la couture d'énergie minimale ($\theta(n+m)$). L'image est ensuite parcourue une nouvelle fois pour générer une nouvelle image. Comme la nouvelle image contient une colonne de moins, le parcours est impacté. Donc la complexité de ce parcours est $\theta(n*m - n)$.
-
-On a donc au total une complexité $\theta(2n*m + m)$.
-
- Il faut maintenant prendre en compte le nombre k d'itérations à effectuer pour modifier l'image de k pixels en largeur. En faisant attention que la taille des tableaux diminue à chaque itération.
+Les complexités en temps et en espace sont identiques pour les deux fonctions.
+\subsubsection{Complexité en espace}
+	En plus de l'image originelle, deux autres images avec un écart de largeur égal à 1 sont générées pour les calculs. En fonction des itérations, leur largeur évolue entre la largeur originelle et la largeur cible. A ces deux images s'ajoutent le tableau contenant les coutures et le tableau contenant les déplacements. Les largeurs des deux tableaux évoluent comme les images. Et à cela s'ajoute un vecteur de taille "n", contenant les numéros de colonne des pixels impliqués dans la couture sélectionnée.
+	La complexité en espace est donc maximale au début de la fonction : $\theta(3*(n*m) + n*(m-1) + n)$ = $\theta(4*n*m)$
+\subsubsection{Complexité en temps}
+	Pour diminuer ou augmenter une image de 1px en largeur la complexité en temps est la suivante :
+L'image est parcourue une fois pour déterminer les coutures($\theta(n*m)$). Elle est ensuite parcourue en largeur et en hauteur pour déterminer la couture d'énergie minimale ($\theta(n+m)$). L'image est ensuite parcourue une nouvelle fois pour générer une nouvelle image. Là la complexité change en fonction de si l'on veut agrandir ou rétrécir l'image :
+\begin{itemize}
+ \item Agrandir : une colonne en plus est générée ($\theta(n*m + n)$). On a donc au total une complexité $\theta(2n*m + m + 2n)$
+ \item Rétrécir : une colonne en moins est parcourue ($\theta(n*m - n)$). On a donc au total une complexité $\theta(2n*m + m)$
+ \end{itemize}
+ Il faut maintenant prendre en compte le nombre k d'itérations à effectuer pour modifier l'image de k pixels en largeur. En faisant attention que la taille des tableaux diminue à chaque itération
+ 
+\textbf{Rétrécissement d'une image:}
 $$
  	T_{n,m,k} = \sum\limits_{i=0}^{k} 2n(m-i) + m-i 
 $$
@@ -236,25 +244,14 @@ $$
  	= k(2n + 1)(m - \frac{(k+1)}{2})
 $$
 Lorsque k est négligeable par rapport à m, la complexité est proche de $\theta(2knm)$\\
-\subsubsection{ImageWidthExpansion}
-\textbf{Complexité en espace}. La complexité en espace est similaire à la fonction de réduction. A la différence que le vecteur contenant les coutures sélectionnées contient maintenant k*n éléments. Et l'image générée contient une colonne de plus. La complexité est donc :  $\theta(4(nm) + n(m+1) + nk)$ = $\theta(5nm + n(1 + k))$
-
-\textbf{Complexité en temps}.
-La fonction d'élargissement est un peu plus complexe, car il faut prendre en compte le parcours du tableau contenant les coutures sélectionnées au sein de la fonction \textbf{seams}.
-
-En comptant que lorsqu'on génère une nouvelle image de largeur + 1, une colonne de plus est parcourue. La complexité est donc formulée comme tel :
+\textbf{Agrandissement d'une image:} \\
+En s'aidant de la formule précédente, on arrive facilement à la formule suivante :
 $$
- 	T_{n,m,k} = \sum\limits_{i=0}^{k} n(m+i)i + n + (m+i) + n(m+i) + n 
-$$
-Pour faciliter les calculs, on ignore les éléments $n$,$n$,$(m+i)$. On a donc :
-$$
- 	T_{n,m,k} = \sum\limits_{i=0}^{k} n(m+i) + \sum\limits_{i=0}^{k} n(m+i)i 
+ 	T_{n,m,k} = (2n + 1)\sum\limits_{i=0}^{k} (m -i) + \sum\limits_{i=0}^{k} 2n
 $$
 $$
- 	= kn(m + \frac{k + 1}{2}) + kn(m\frac{k + 1}{2} + \frac{(2k + 1)(k + 1)}{6})
+ 	= k2n + k(2n + 1)(m - \frac{(k+1)}{2})
 $$
-$$
- 	= kn(m(1 + \frac{k + 1}{2}) + \frac{k + 1}{2} + \frac{2k^2 + 3k + 1}{6})
-$$
-La complexité obtenue est donc $\Omega(knm)$
+Encore une fois, lorsque k est négligeable par rapport à m, et en prenant en compte que $k2n$ est négligeable par rapport au reste de la formule, on a une complexité proche de $\theta(2knm)$ 
+ 
 \end{document}
