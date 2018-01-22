@@ -50,3 +50,17 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Antoine
+CMakeCache\.txt
+CMakeFiles/3\.10\.0/
+CMakeFiles/
+Makefile
+*.cmake
+mainComic
+mainSeamCarving
+src/pnm/test\.pnm
+Cmake dir
+
+# CmakeDir Clion 
+cmake-build-debug/
